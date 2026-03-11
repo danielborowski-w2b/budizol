@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budizol.de — Proponowana struktura nawigacji</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f1117;
+    color: #e1e4ea;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+  .subtitle {
+    color: #8b90a0;
+    font-size: 0.95rem;
+    margin-bottom: 32px;
+  }
+  .legend {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #8b90a0;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .tree { padding-left: 0; }
+  .tree ul { padding-left: 0; list-style: none; }
+  .tree li {
+    position: relative;
+    padding-left: 28px;
+  }
+  .tree > ul > li { padding-left: 0; }
+  /* vertical + horizontal connector lines */
+  .tree li::before,
+  .tree li::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+  }
+  .tree li::before {
+    border-left: 1.5px solid #2a2d3a;
+    height: 100%;
+    top: 0;
+  }
+  .tree li::after {
+    border-top: 1.5px solid #2a2d3a;
+    width: 14px;
+    top: 22px;
+  }
+  .tree li:last-child::before { height: 22px; }
+  .tree > ul > li::before,
+  .tree > ul > li::after { display: none; }
+
+  .node {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    margin: 4px 0;
+    border-radius: 8px;
+    cursor: default;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .node:hover { background: #1a1d27; }
+  .node.expandable { cursor: pointer; }
+  .node.expandable:hover { background: #1c2030; }
+
+  .node-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .node-label {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #e8eaf0;
+  }
+  .node-url {
+    font-size: 0.78rem;
+    color: #5a6070;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    margin-left: 4px;
+  }
+  .node-badge {
+    font-size: 0.68rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-new { background: #1a3a2a; color: #4ade80; }
+  .badge-moved { background: #3a2a1a; color: #fbbf24; }
+  .badge-renamed { background: #2a1a3a; color: #c084fc; }
+  .badge-hub { background: #1a2a3a; color: #60a5fa; }
+
+  .expand-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #5a6070;
+    border: 1px solid #2a2d3a;
+    border-radius: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .node.expandable:hover .expand-icon { border-color: #4a4d5a; color: #8b90a0; }
+  .collapsed > ul { display: none; }
+  .collapsed .expand-icon { transform: rotate(-90deg); }
+
+  /* color coding by type */
+  .c-root     { background: #3b82f6; }
+  .c-tech     { background: #8b5cf6; }
+  .c-category { background: #06b6d4; }
+  .c-product  { background: #10b981; }
+  .c-service  { background: #f59e0b; }
+  .c-project  { background: #ef4444; }
+  .c-company  { background: #ec4899; }
+  .c-blog     { background: #6366f1; }
+  .c-page     { background: #64748b; }
+
+  .stats {
+    margin-top: 36px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .stat-card {
+    background: #161821;
+    border: 1px solid #1e2030;
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-num { font-size: 2rem; font-weight: 700; color: #fff; }
+  .stat-label { font-size: 0.78rem; color: #6b7080; margin-top: 4px; }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: 1px solid #2a2d3a;
+    background: #161821;
+    color: #8b90a0;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: #1e2030; color: #e1e4ea; border-color: #3a3d4a; }
+
+  .redirect-note {
+    margin-top: 36px;
+    background: #1a1510;
+    border: 1px solid #3a2a10;
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-size: 0.85rem;
+    color: #c4a050;
+    line-height: 1.5;
+  }
+  .redirect-note strong { color: #fbbf24; }
+
+  @media (max-width: 700px) {
+    h1 { font-size: 1.3rem; }
+    .node-url { display: none; }
+    .legend { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Budizol.de — Proponowana struktura nawigacji</h1>
+  <p class="subtitle">Audyt SEO, marzec 2026 — Rozdział 2.8: Nawigacja serwisu</p>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot c-root"></div> Strona główna</div>
+    <div class="legend-item"><div class="legend-dot c-tech"></div> Technologia</div>
+    <div class="legend-item"><div class="legend-dot c-category"></div> Kategoria produktów</div>
+    <div class="legend-item"><div class="legend-dot c-product"></div> Produkt</div>
+    <div class="legend-item"><div class="legend-dot c-service"></div> Usługi</div>
+    <div class="legend-item"><div class="legend-dot c-project"></div> Projekty</div>
+    <div class="legend-item"><div class="legend-dot c-company"></div> Firma</div>
+    <div class="legend-item"><div class="legend-dot c-blog"></div> Blog</div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="expandAll()">Rozwiń wszystko</button>
+    <button class="btn" onclick="collapseAll()">Zwiń wszystko</button>
+    <button class="btn" onclick="expandLevel(2)">Poziom 2</button>
+    <button class="btn" onclick="expandLevel(3)">Poziom 3</button>
+  </div>
+
+  <div class="tree" id="tree"></div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num">5</div><div class="stat-label">Pozycji top-level menu</div></div>
+    <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Poziomy głębokości</div></div>
+    <div class="stat-card"><div class="stat-num">~110</div><div class="stat-label">Przekierowań 301</div></div>
+    <div class="stat-card"><div class="stat-num">1</div><div class="stat-label">Nowa strona hub</div></div>
+  </div>
+
+  <div class="redirect-note">
+    <strong>Migracja URL:</strong> Polskojęzyczne slugi (<code>/produkty/</code>, <code>/realizacje/</code>, <code>/hotele/</code>) zostaną zastąpione niemieckojęzycznymi (<code>/produkte/</code>, <code>/projekte/</code>, <code>/unternehmen/hotels/</code>). Każda zmiana wymaga przekierowania 301. Pełna mapa przekierowań — patrz rozdział audytu.
+  </div>
+</div>
+
+<script>
+const data = {
+  label: "budizol.de", url: "/", color: "c-root", badge: null,
+  children: [
+    { label: "Startseite", url: "/", color: "c-root", badge: null },
+    { label: "Produkte", url: "/produkte/", color: "c-root", badge: "nowy hub",
+      children: [
+        { label: "Stahlbeton-Fertigteile", url: "/produkte/stahlbeton/", color: "c-tech", badge: "przeniesione",
+          children: [
+            { label: "Wände", url: "/produkte/stahlbeton/waende/", color: "c-category",
+              children: [
+                { label: "Einschichtige Wände", url: "/produkte/stahlbeton/waende/einschichtig/", color: "c-product" },
+                { label: "Zweischichtige Wände", url: "/produkte/stahlbeton/waende/zweischichtig/", color: "c-product" },
+                { label: "Dreischichtige Wände", url: "/produkte/stahlbeton/waende/dreischichtig/", color: "c-product" },
+              ]
+            },
+            { label: "Decken", url: "/produkte/stahlbeton/decken/", color: "c-category",
+              children: [
+                { label: "Filigrandecken", url: "/produkte/stahlbeton/decken/filigrandecken/", color: "c-product" },
+                { label: "Massivdecken", url: "/produkte/stahlbeton/decken/massivdecken/", color: "c-product" },
+                { label: "Spannbetondecken (HCS)", url: "/produkte/stahlbeton/decken/spannbetondecken/", color: "c-product" },
+                { label: "HCR-Decken", url: "/produkte/stahlbeton/decken/hcr-decken/", color: "c-product" },
+              ]
+            },
+            { label: "Fassaden", url: "/produkte/stahlbeton/fassaden/", color: "c-category" },
+            { label: "Treppen", url: "/produkte/stahlbeton/treppen/", color: "c-category" },
+            { label: "Balkone", url: "/produkte/stahlbeton/balkone/", color: "c-category" },
+            { label: "Stützen & Träger", url: "/produkte/stahlbeton/stuetzen-traeger/", color: "c-category" },
+            { label: "Fundamente", url: "/produkte/stahlbeton/fundamente/", color: "c-category" },
+          ]
+        },
+        { label: "Hybridfertigung", url: "/produkte/hybrid/", color: "c-tech", badge: "przeniesione",
+          children: [
+            { label: "Hybridwände", url: "/produkte/hybrid/waende/", color: "c-product" },
+            { label: "Hybriddecken", url: "/produkte/hybrid/decken/", color: "c-product" },
+          ]
+        },
+        { label: "Holzfertigung", url: "/produkte/holz/", color: "c-tech", badge: "przeniesione",
+          children: [
+            { label: "Außenwände", url: "/produkte/holz/aussenwaende/", color: "c-product" },
+            { label: "Innenwände", url: "/produkte/holz/innenwaende/", color: "c-product" },
+            { label: "Dachpaneele", url: "/produkte/holz/dachpaneele/", color: "c-product" },
+            { label: "Dachtragwerk", url: "/produkte/holz/dachtragwerk/", color: "c-product" },
+          ]
+        },
+      ]
+    },
+    { label: "Leistungen", url: "/leistungen/", color: "c-service", badge: "zmiana nazwy",
+      children: [
+        { label: "Planung & BIM-Design", url: "/leistungen/planung/", color: "c-service", badge: "zmiana nazwy" },
+        { label: "Produktion", url: "/leistungen/produktion/", color: "c-service" },
+        { label: "Transport", url: "/leistungen/transport/", color: "c-service" },
+        { label: "Montage", url: "/leistungen/montage/", color: "c-service" },
+      ]
+    },
+    { label: "Projekte", url: "/projekte/", color: "c-project", badge: "hub",
+      children: [
+        { label: "Bürogebäude", url: "/projekte/buerogebaeude/", color: "c-project" },
+        { label: "Industriegebäude", url: "/projekte/industrie-und-lagergebaeude/", color: "c-project" },
+        { label: "Hotels & Wohngebäude", url: "/projekte/hotels-und-wohngebaeude/", color: "c-project" },
+        { label: "Öffentliche Gebäude", url: "/projekte/oeffentliche-gebaeude/", color: "c-project" },
+        { label: "50 indywidualnych realizacji", url: "/projekte/[slug]/", color: "c-page" },
+      ]
+    },
+    { label: "Unternehmen", url: "/unternehmen/", color: "c-company", badge: "zmiana nazwy",
+      children: [
+        { label: "Über uns", url: "/unternehmen/ueber-uns/", color: "c-company" },
+        { label: "Auszeichnungen", url: "/unternehmen/auszeichnungen/", color: "c-company", badge: "przeniesione" },
+        { label: "Hotels der Budizol-Gruppe", url: "/unternehmen/hotels/", color: "c-company" },
+        { label: "Kontakt", url: "/unternehmen/kontakt/", color: "c-company" },
+      ]
+    },
+    { label: "Blog", url: "/blog/", color: "c-blog",
+      children: [
+        { label: "Kategorie tematyczne", url: "/blog/kategorie/[slug]/", color: "c-blog" },
+        { label: "14 artykułów", url: "/blog/[slug]/", color: "c-page" },
+      ]
+    },
+  ]
+};
+
+function badgeHTML(b) {
+  if (!b) return '';
+  const cls = b === 'nowy hub' || b === 'hub' ? 'badge-hub'
+            : b === 'przeniesione' ? 'badge-moved'
+            : b === 'zmiana nazwy' ? 'badge-renamed'
+            : 'badge-new';
+  return `<span class="node-badge ${cls}">${b}</span>`;
+}
+
+function renderNode(node, level) {
+  const has = node.children && node.children.length > 0;
+  const expandable = has ? 'expandable' : '';
+  const collapsed = has && level > 2 ? 'collapsed' : '';
+  let html = `<li class="${collapsed}" data-level="${level}">`;
+  html += `<div class="node ${expandable}" ${has ? 'onclick="toggle(this.parentElement)"' : ''}>`;
+  if (has) html += `<span class="expand-icon">▼</span>`;
+  html += `<span class="node-dot ${node.color}"></span>`;
+  html += `<span class="node-label">${node.label}</span>`;
+  html += `<span class="node-url">${node.url}</span>`;
+  html += badgeHTML(node.badge);
+  html += `</div>`;
+  if (has) {
+    html += '<ul>';
+    node.children.forEach(c => { html += renderNode(c, level + 1); });
+    html += '</ul>';
+  }
+  html += '</li>';
+  return html;
+}
+
+function renderTree() {
+  let html = '<ul>';
+  html += renderNode(data, 0);
+  html += '</ul>';
+  document.getElementById('tree').innerHTML = html;
+}
+
+function toggle(li) {
+  li.classList.toggle('collapsed');
+}
+
+function expandAll() {
+  document.querySelectorAll('.tree li.collapsed').forEach(li => li.classList.remove('collapsed'));
+}
+
+function collapseAll() {
+  document.querySelectorAll('.tree li').forEach(li => {
+    if (li.querySelector('ul')) li.classList.add('collapsed');
+  });
+  // keep root open
+  const root = document.querySelector('.tree > ul > li');
+  if (root) root.classList.remove('collapsed');
+}
+
+function expandLevel(maxLevel) {
+  document.querySelectorAll('.tree li').forEach(li => {
+    const level = parseInt(li.dataset.level);
+    if (li.querySelector('ul')) {
+      if (level < maxLevel) li.classList.remove('collapsed');
+      else li.classList.add('collapsed');
+    }
+  });
+}
+
+renderTree();
+</script>
+</body>
+</html>
